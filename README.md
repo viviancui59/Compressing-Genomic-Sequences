@@ -1,1 +1,1 @@
-# Deep-Learning-For-Genomic-Compression
+# Deep-Learning
