@@ -25,14 +25,6 @@ train_set_size=int(len(reads)*0.7)
 valid_set_size=int(len(reads)*0.2)
 test_set_size=int(len(reads)*0.1)
 
-def split_train_test(data, test_ratio,valid_ratio):
-    shuffled_indices = np.random.permutation(len(data))
-    test_set_size = int(len(data) * test_ratio)
-    valid_set_size=int(test_set_size*valid_ratio/(valid_ratio+test_ratio))
-    test_indices = shuffled_indices[valid_set_size:test_set_size]
-    valid_indices = shuffled_indices[:valid_set_size]
-    train_indices = shuffled_indices[test_set_size:]
-    return data[train_indices], data[valid_indices], data[test_indices]
 items = [x for x in range(len(reads))]
 
 random.shuffle(items)
@@ -67,9 +59,9 @@ for i in test:
     test_record.append(read)
 print(len(train_record), "train +", len(test_record), "test")
 #save the data
-SeqIO.write(train_record, "./fna_data/train.fasta", "fasta")
-SeqIO.write(valid_record, "./fna_data/valid.fasta", "fasta")
-SeqIO.write(test_record, "./fna_data/test.fasta", "fasta")
+SeqIO.write(train_record, "data/train.fasta", "fasta")
+SeqIO.write(valid_record, "data/valid.fasta", "fasta")
+SeqIO.write(test_record, "data/test.fasta", "fasta")
 
 
 def read_fasta(data_path):
