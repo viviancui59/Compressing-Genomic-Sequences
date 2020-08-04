@@ -1,5 +1,3 @@
-'''Author: Rongjie Wang'''
-
 from __future__ import print_function
 from keras.callbacks import LambdaCallback, Callback
 from keras.layers import Dense, Bidirectional, Average, average, Input
@@ -33,11 +31,9 @@ from Bio import SeqIO
 from keras.callbacks import EarlyStopping
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=2)
-np.random.seed(1337)  # for reproducibility
-train_path = '/home/cww/DeepZip/rongjiewang/DNN_dataset/train.fasta'
-valid_path = '/home/cww/DeepZip/rongjiewang/DNN_dataset/valid.fasta'
-#test_path = '/home/cww/DeepZip/rongjiewang/DNN_dataset/test.fasta'
-test_path = "/home/cww/DeepZip/DNA/fish_xlt_final/test.fasta"
+train_path = 'data/train.fasta'
+valid_path = 'data/valid.fasta'
+test_path = "data/test.fasta"
 todaydate = str(datetime.date.today()) + 'CNN+LSTM'
 chars = "ACGTN"
 print('total chars:', len(chars))
@@ -93,16 +89,6 @@ def get_batch(stream):
         sentences = []
         next_chars = []
 
-
-def my_kernel_initializer(shape, dtype=None):
-    x = np.zeros(shape, dtype=np.bool)
-    for i, c in enumerate(product('ACGT', repeat=5)):
-        kmer = c * 3
-        for t, char in enumerate(kmer):
-            x[t, char_indices[char], i] = 1
-    return x
-
-
 def loadModel():
     # model.load_weights('my_model_weights.h5')
     # json and create model
@@ -122,25 +108,15 @@ def Model_CNN_BiLSTM_noCNN(alphabet_size):
 
     
     model.add(BatchNormalization(input_shape=( maxlen,alphabet_size)))
-    #model.add(Dropout(0.5))
-    #model.add(Embedding(alphabet_size, 16, input_length= 5))
+ 
     model.add(Bidirectional(LSTM(256, stateful=False, return_sequences=True)))
-    #model.add(Bidirectional(LSTM(128, stateful=False, return_sequences=True),merge_mode='concat'))
-    # model.add(Bidirectional(CuDNNLSTM(32, stateful=False, return_sequences=False)))
+
     
     
     model.add(AttentionWithContext())
-    #model.add(Activation('relu'))
-    #model.add(BatchNormalization())
-    #model.add(Flatten())
-    #model.add(Dropout(0.2))
-    #model.add(Dropout(0.2))
-    #
-    #model.add(Dense(1024))
+
     model.add(Activation('relu'))
-   # model.add(BatchNormalization()
-   # model.add(Dense(input_dim))
-    #model.add(Activation('softmax'))
+
     model.add(Dense(alphabet_size, activation='softmax'))
     
     return model
@@ -162,22 +138,12 @@ def Model_CNN_BiLSTM_noBi(alphabet_size):  #cnn_emerge+biLSTM+attention
     #model.add(Dropout(0.5))
     #model.add(Embedding(alphabet_size, 16, input_length= 5))
     model.add(LSTM(256, stateful=False, return_sequences=True))
-    #model.add(Bidirectional(LSTM(128, stateful=False, return_sequences=True),merge_mode='concat'))
-    # model.add(Bidirectional(CuDNNLSTM(32, stateful=False, return_sequences=False)))
-    
-    
+ 
     model.add(AttentionWithContext())
-    #model.add(Activation('relu'))
-    #model.add(BatchNormalization())
-    #model.add(Flatten())
-    #model.add(Dropout(0.2))
-    #model.add(Dropout(0.2))
-    #
-    #model.add(Dense(1024))
+
+
     model.add(Activation('relu'))
-   # model.add(BatchNormalization()
-   # model.add(Dense(input_dim))
-    #model.add(Activation('softmax'))
+
     model.add(Dense(alphabet_size, activation='softmax'))
     
     return model
@@ -195,88 +161,35 @@ def Model_CNN_BiLSTM_noatten(alphabet_size):  #cnn_emerge+biLSTM+attention
     model.add(MaxPooling1D(pool_size=3))
     
     model.add(BatchNormalization())
-    #model.add(Dropout(0.5))
-    #model.add(Embedding(alphabet_size, 16, input_length= 5))
+
     model.add(Bidirectional(LSTM(256, stateful=False, return_sequences=True)))
-    #model.add(Bidirectional(LSTM(128, stateful=False, return_sequences=True),merge_mode='concat'))
-    # model.add(Bidirectional(CuDNNLSTM(32, stateful=False, return_sequences=False)))
-    
-    
-   # model.add(AttentionWithContext())
-    #model.add(Activation('relu'))
-    #model.add(BatchNormalization())
+
     model.add(Flatten())
-    #model.add(Dropout(0.2))
-    #model.add(Dropout(0.2))
-    #
-    #model.add(Dense(1024))
-   # model.add(Activation('relu'))
-   # model.add(BatchNormalization()
-   # model.add(Dense(input_dim))
-    #model.add(Activation('softmax'))
+
     model.add(Dense(alphabet_size, activation='softmax'))
     
     return model
-def Model1(bs,time_steps, alphabet_size):  
-    model = Sequential()
-    model.add(Embedding(alphabet_size, 16, batch_input_shape=(bs, time_steps)))
-    model.add(Bidirectional(LSTM(128, stateful=False, return_sequences=True)))
-    # model.add(Bidirectional(CuDNNLSTM(32, stateful=False, return_sequences=False)))
-    model.add(Dropout(0.2))
-    model.add(AttentionWithContext())
-    model.add(Dropout(0.3))
-    model.add(Dense(64, activation='relu'))
 
-    model.add(BatchNormalization())
-    model.add(Dense(alphabet_size, activation='softmax'))
-    return model
 
-def Model():  # cnn_emerge+biLSTM+attention
+def Model(alphabet_size):  # cnn+biLSTM+attention
 
     print('Build model...')
     # convs = []
     # filter_sizes = [6,7,8]
     model = Sequential()
-    model.add(Conv1D(filters=1024,kernel_size=24,trainable=True, padding='valid',activation='relu',strides=1,input_shape=( maxlen,5)))
+    model.add(Conv1D(filters=1024,kernel_size=24,trainable=True, padding='valid',activation='relu',strides=1,input_shape=( maxlen,alphabet_size)))
     model.add(MaxPooling1D(pool_size=3))
 
     model.add(BatchNormalization())
-   # model.add(Dropout(0.1))
-    # model.add(Embedding(alphabet_size, 16, input_length= 5))
+ 
     model.add(Bidirectional(LSTM(256, stateful=False, return_sequences=True)))
-    # model.add(Bidirectional(LSTM(128, stateful=False, return_sequences=True),merge_mode='concat'))
-    # model.add(Bidirectional(CuDNNLSTM(32, stateful=False, return_sequences=False)))
-
+ 
     model.add(AttentionWithContext())
-    # model.add(Activation('relu'))
-    # model.add(BatchNormalization())
-    # model.add(Flatten())
-    # model.add(Dropout(0.2))
-    # model.add(Dropout(0.2))
-    #
-    # model.add(Dense(1024))
     model.add(Activation('relu'))
-    #model.add(BatchNormalization())
+  
     model.add(Dense(input_dim))
     model.add(Activation('softmax'))
-    #model.add(Dense(input_dim, activation='softmax'))
-   
-
     return model
-
-
-
-def saveModel(epoch):
-    # serialize model to JSON
-    model_json = model.to_json()
-    with open("model.json", "w") as json_file:
-        json_file.write(model_json)
-    # serialize weights to HDF5
-    name = "model_" + str(epoch) + ".h5"
-    model.save_weights(name)
-    print("Saved model to disk")
-    return
-
 
 
 def on_epoch_end(epoch):
@@ -301,9 +214,10 @@ def readFasta(filename):
 
 
 model = Model_CNN_BiLSTM_noatten(5)
-#model=model_CNN_LSTM()
+
 print(model.summary())
-model.load_weights("/home/cww/DeepZip/DNA/fish_xlt_final/weight_noatten_2019-10-28CNN+LSTM.h5")
+#load weight
+model.load_weights("cpt/weight_2019-10-28CNN+LSTM.h5")
 optim = keras.optimizers.Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=0, amsgrad=False)
 model.compile(loss=loss_fn, optimizer=optim,metrics=['accuracy'])
 
@@ -331,24 +245,7 @@ for i, record in enumerate(readFasta(test_path)):
    loss_total.append(loss)
 print("Total average is:")    
 print(np.mean(loss_total))
-    # x=model.train_on_batch(_input,_labels)
-    # if(i%100==0):
-    #     print(epoch,'\t', x*math.log(math.e,2))
 
-
-# train_inputs = train_inputs.reshape(1,64,5)
-
-# train_labels = np_utils.to_categorical(train_labels, 5)
-
-# valid_inputs = train_inputs.reshape(len(valid_inputs),-1)
-# valid_labels = np_utils.to_categorical(valid_labels, 5)
-
-
-# saveModel(epoch)
-# testEntropy = on_epoch_end(epoch)
-# print(testEntropy)
-# entropy.append(testEntropy)
-# print(entropy)
 
 
 
